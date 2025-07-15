@@ -20,11 +20,13 @@ export const UserDashboard: React.FC = () => {
     overdue: 0
   });
   const [allTasks, setAllTasks] = useState<TaskData[]>([]); // New state for all tasks
+  const [users, setUsers] = useState<UserData[]>([]); // Add users state
   const { toast } = useToast();
 
   useEffect(() => {
     loadUserData();
-    loadAllTasks(); // Fetch all tasks for the system
+    loadAllTasks();
+    loadUsers(); // Fetch all users
   }, []);
 
   const loadUserData = async () => {
@@ -60,6 +62,15 @@ export const UserDashboard: React.FC = () => {
       setAllTasks(all);
     } catch (error) {
       console.error('Error loading all tasks:', error);
+    }
+  };
+
+  const loadUsers = async () => {
+    try {
+      const allUsers = await AuthService.getAllUsers();
+      setUsers(allUsers);
+    } catch (error) {
+      console.error('Error loading users:', error);
     }
   };
 

@@ -21,6 +21,8 @@ export interface TaskData {
   deadline: Date;
   createdAt: Date;
   assignedToName?: string;
+  notes?: string; // admin notes
+  userNotes?: string; // user notes
 }
 
 export class TaskService {
@@ -29,7 +31,9 @@ export class TaskService {
     const task = {
       ...taskData,
       createdAt: Timestamp.now(),
-      deadline: Timestamp.fromDate(taskData.deadline)
+      deadline: Timestamp.fromDate(taskData.deadline),
+      notes: taskData.notes || '',
+      userNotes: taskData.userNotes || '',
     };
     
     const docRef = await addDoc(collection(db, 'tasks'), task);
@@ -48,7 +52,9 @@ export class TaskService {
         id: doc.id,
         ...data,
         deadline: data.deadline.toDate(),
-        createdAt: data.createdAt.toDate()
+        createdAt: data.createdAt.toDate(),
+        notes: data.notes || '',
+        userNotes: data.userNotes || '',
       } as TaskData;
     });
   }
@@ -69,14 +75,16 @@ export class TaskService {
         id: doc.id,
         ...data,
         deadline: data.deadline.toDate(),
-        createdAt: data.createdAt.toDate()
+        createdAt: data.createdAt.toDate(),
+        notes: data.notes || '',
+        userNotes: data.userNotes || '',
       } as TaskData;
     });
   }
 
   // Update task
   static async updateTask(taskId: string, updates: Partial<TaskData>): Promise<void> {
-    const updateData: any = { ...updates };
+    const updateData: Record<string, unknown> = { ...updates };
     
     // Convert deadline to Timestamp if it's being updated
     if (updateData.deadline && updateData.deadline instanceof Date) {
@@ -120,7 +128,9 @@ export class TaskService {
         status: data.status as TaskData['status'],
         assignedTo: data.assignedTo,
         deadline: data.deadline.toDate(),
-        createdAt: data.createdAt.toDate()
+        createdAt: data.createdAt.toDate(),
+        notes: data.notes || '',
+        userNotes: data.userNotes || '',
       };
     });
     

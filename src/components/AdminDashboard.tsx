@@ -40,7 +40,8 @@ export const AdminDashboard: React.FC = () => {
     title: '',
     description: '',
     assignedTo: '',
-    deadline: ''
+    deadline: '',
+    notes: ''
   });
   const [newUser, setNewUser] = useState({
     name: '',
@@ -51,7 +52,14 @@ export const AdminDashboard: React.FC = () => {
   // 1. Add state for editing task and user
   const [editTaskDialog, setEditTaskDialog] = useState<{ open: boolean, task: TaskData | null }>({ open: false, task: null });
   const [editUserDialog, setEditUserDialog] = useState<{ open: boolean, user: UserData | null }>({ open: false, user: null });
-  const [editTask, setEditTask] = useState({ title: '', description: '', assignedTo: '', deadline: '', status: 'pending' });
+  const [editTask, setEditTask] = useState({
+    title: '',
+    description: '',
+    assignedTo: '',
+    deadline: '',
+    status: 'pending',
+    notes: ''
+  });
   const [editUser, setEditUser] = useState({ name: '', email: '', role: 'user' as 'admin' | 'user' });
   const { toast } = useToast();
 
@@ -90,7 +98,8 @@ export const AdminDashboard: React.FC = () => {
         description: newTask.description,
         assignedTo: newTask.assignedTo,
         deadline: new Date(newTask.deadline),
-        status: 'pending'
+        status: 'pending',
+        notes: newTask.notes
       });
       
       toast({
@@ -98,7 +107,7 @@ export const AdminDashboard: React.FC = () => {
         description: "Task created successfully",
       });
       
-      setNewTask({ title: '', description: '', assignedTo: '', deadline: '' });
+      setNewTask({ title: '', description: '', assignedTo: '', deadline: '', notes: '' });
       setShowTaskDialog(false);
       loadData();
     } catch (error) {
@@ -366,6 +375,15 @@ export const AdminDashboard: React.FC = () => {
                     onChange={(e) => setNewTask({...newTask, deadline: e.target.value})}
                   />
                 </div>
+                <div>
+                  <Label htmlFor="taskNotes">Notes</Label>
+                  <Textarea
+                    id="taskNotes"
+                    value={newTask.notes}
+                    onChange={e => setNewTask({ ...newTask, notes: e.target.value })}
+                    placeholder="Enter notes for the user (optional)"
+                  />
+                </div>
                 <Button onClick={handleCreateTask} className="w-full">
                   Create Task
                 </Button>
@@ -465,6 +483,9 @@ export const AdminDashboard: React.FC = () => {
                       </div>
                     </div>
                     <p className="text-sm text-muted-foreground mb-2">{task.description}</p>
+                    {task.notes && (
+                      <p className="text-xs text-muted-foreground mb-1"><strong>Notes:</strong> {task.notes}</p>
+                    )}
                     <div className="flex justify-between items-center text-sm">
                       <div className="text-muted-foreground">
                         <p>Assigned to: {task.assignedToName}</p>
@@ -478,7 +499,8 @@ export const AdminDashboard: React.FC = () => {
                             description: task.description,
                             assignedTo: task.assignedTo,
                             deadline: task.deadline ? new Date(task.deadline).toISOString().slice(0,16) : '',
-                            status: task.status
+                            status: task.status,
+                            notes: task.notes
                           });
                         }}>
                           <Edit className="w-4 h-4" />
@@ -608,6 +630,15 @@ export const AdminDashboard: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label htmlFor="editTaskNotes">Notes</Label>
+              <Textarea
+                id="editTaskNotes"
+                value={editTask.notes}
+                onChange={e => setEditTask({ ...editTask, notes: e.target.value })}
+                placeholder="Enter notes for the user (optional)"
+              />
+            </div>
             <Button className="w-full" onClick={async () => {
               if (!editTaskDialog.task) return;
               await TaskService.updateTask(editTaskDialog.task.id, {
@@ -615,7 +646,8 @@ export const AdminDashboard: React.FC = () => {
                 description: editTask.description,
                 assignedTo: editTask.assignedTo,
                 deadline: new Date(editTask.deadline),
-                status: editTask.status as TaskData['status']
+                status: editTask.status as TaskData['status'],
+                notes: editTask.notes
               });
               toast({ title: "Success", description: "Task updated successfully" });
               setEditTaskDialog({ open: false, task: null });
