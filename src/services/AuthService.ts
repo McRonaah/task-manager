@@ -7,7 +7,7 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, collection, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
-import { auth, db } from '../lib/firebase';
+import firebase, { auth, db } from '../lib/firebase';
 
 export interface UserData {
   id: string;

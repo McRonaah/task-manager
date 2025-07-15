@@ -19,10 +19,12 @@ export const UserDashboard: React.FC = () => {
     completed: 0,
     overdue: 0
   });
+  const [allTasks, setAllTasks] = useState<TaskData[]>([]); // New state for all tasks
   const { toast } = useToast();
 
   useEffect(() => {
     loadUserData();
+    loadAllTasks(); // Fetch all tasks for the system
   }, []);
 
   const loadUserData = async () => {
@@ -45,10 +47,19 @@ export const UserDashboard: React.FC = () => {
         TaskService.getTasksForUser(userId),
         TaskService.getTaskStats(userId)
       ]);
-      setTasks(userTasks);
-      setStats(taskStats);
+      setTasks(userTasks); // <-- Fix: update tasks state
+      setStats(taskStats); // <-- Fix: update stats state
     } catch (error) {
       console.error('Error loading tasks:', error);
+    }
+  };
+
+  const loadAllTasks = async () => {
+    try {
+      const all = await TaskService.getAllTasks();
+      setAllTasks(all);
+    } catch (error) {
+      console.error('Error loading all tasks:', error);
     }
   };
 
@@ -81,6 +92,7 @@ export const UserDashboard: React.FC = () => {
         title: "Success",
         description: "Signed out successfully",
       });
+      window.location.replace('/login'); // <-- redirect after sign out
     } catch (error) {
       toast({
         title: "Error",
@@ -145,6 +157,56 @@ export const UserDashboard: React.FC = () => {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* All Tasks List */}
+        <Card className="task-card mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>All Tasks</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadAllTasks}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {allTasks.length === 0 ? (
+              <div className="text-center py-8">
+                <Calendar className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground">No tasks in the system.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {allTasks.map((task) => (
+                  <div key={task.id} className="border rounded-lg p-4 hover:shadow-[var(--shadow-elevated)] transition-[var(--transition-smooth)]">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-semibold text-foreground">{task.title}</h3>
+                      <div className="flex items-center space-x-2">
+                        <Badge className={`status-badge ${getStatusColor(task.status)}`}>{task.status.replace('-', ' ')}</Badge>
+                        {isOverdue(task.deadline, task.status) && (
+                          <Badge className="status-badge status-overdue">Overdue</Badge>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-muted-foreground mb-3">{task.description}</p>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Calendar className="w-4 h-4 mr-1" />
+                        Due: {formatDate(task.deadline)}
+                      </div>
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        Assigned To: {task.assignedTo || 'Unassigned'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <Card className="task-card">

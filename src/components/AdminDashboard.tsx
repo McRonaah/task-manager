@@ -48,6 +48,11 @@ export const AdminDashboard: React.FC = () => {
     password: '',
     role: 'user' as 'admin' | 'user'
   });
+  // 1. Add state for editing task and user
+  const [editTaskDialog, setEditTaskDialog] = useState<{ open: boolean, task: TaskData | null }>({ open: false, task: null });
+  const [editUserDialog, setEditUserDialog] = useState<{ open: boolean, user: UserData | null }>({ open: false, user: null });
+  const [editTask, setEditTask] = useState({ title: '', description: '', assignedTo: '', deadline: '', status: 'pending' });
+  const [editUser, setEditUser] = useState({ name: '', email: '', role: 'user' as 'admin' | 'user' });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -167,6 +172,7 @@ export const AdminDashboard: React.FC = () => {
         title: "Success",
         description: "Signed out successfully",
       });
+      window.location.replace('/login'); // <-- redirect after sign out
     } catch (error) {
       toast({
         title: "Error",
@@ -465,7 +471,16 @@ export const AdminDashboard: React.FC = () => {
                         <p>Due: {formatDate(task.deadline)}</p>
                       </div>
                       <div className="flex space-x-2">
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => {
+                          setEditTaskDialog({ open: true, task });
+                          setEditTask({
+                            title: task.title,
+                            description: task.description,
+                            assignedTo: task.assignedTo,
+                            deadline: task.deadline ? new Date(task.deadline).toISOString().slice(0,16) : '',
+                            status: task.status
+                          });
+                        }}>
                           <Edit className="w-4 h-4" />
                         </Button>
                         <Button 
@@ -506,7 +521,14 @@ export const AdminDashboard: React.FC = () => {
                         </Badge>
                       </div>
                       <div className="flex space-x-2">
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => {
+                          setEditUserDialog({ open: true, user });
+                          setEditUser({
+                            name: user.name,
+                            email: user.email,
+                            role: user.role
+                          });
+                        }}>
                           <Edit className="w-4 h-4" />
                         </Button>
                         <Button 
@@ -525,6 +547,138 @@ export const AdminDashboard: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* 3. Edit Task Dialog */}
+      <Dialog open={editTaskDialog.open} onOpenChange={open => setEditTaskDialog({ open, task: open ? editTaskDialog.task : null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Task</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="editTaskTitle">Title</Label>
+              <Input
+                id="editTaskTitle"
+                value={editTask.title}
+                onChange={e => setEditTask({ ...editTask, title: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="editTaskDescription">Description</Label>
+              <Textarea
+                id="editTaskDescription"
+                value={editTask.description}
+                onChange={e => setEditTask({ ...editTask, description: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="editAssignedTo">Assign To</Label>
+              <Select value={editTask.assignedTo} onValueChange={value => setEditTask({ ...editTask, assignedTo: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select user" />
+                </SelectTrigger>
+                <SelectContent>
+                  {users.map(user => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name} ({user.email})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="editDeadline">Deadline</Label>
+              <Input
+                id="editDeadline"
+                type="datetime-local"
+                value={editTask.deadline}
+                onChange={e => setEditTask({ ...editTask, deadline: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="editStatus">Status</Label>
+              <Select value={editTask.status} onValueChange={value => setEditTask({ ...editTask, status: value as TaskData['status'] })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button className="w-full" onClick={async () => {
+              if (!editTaskDialog.task) return;
+              await TaskService.updateTask(editTaskDialog.task.id, {
+                title: editTask.title,
+                description: editTask.description,
+                assignedTo: editTask.assignedTo,
+                deadline: new Date(editTask.deadline),
+                status: editTask.status as TaskData['status']
+              });
+              toast({ title: "Success", description: "Task updated successfully" });
+              setEditTaskDialog({ open: false, task: null });
+              loadData();
+            }}>
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 4. Edit User Dialog */}
+      <Dialog open={editUserDialog.open} onOpenChange={open => setEditUserDialog({ open, user: open ? editUserDialog.user : null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="editUserName">Name</Label>
+              <Input
+                id="editUserName"
+                value={editUser.name}
+                onChange={e => setEditUser({ ...editUser, name: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="editUserEmail">Email</Label>
+              <Input
+                id="editUserEmail"
+                type="email"
+                value={editUser.email}
+                onChange={e => setEditUser({ ...editUser, email: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="editUserRole">Role</Label>
+              <Select value={editUser.role} onValueChange={value => setEditUser({ ...editUser, role: value as 'admin' | 'user' })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button className="w-full" onClick={async () => {
+              if (!editUserDialog.user) return;
+              await AuthService.updateUser(editUserDialog.user.id, {
+                name: editUser.name,
+                email: editUser.email,
+                role: editUser.role
+              });
+              toast({ title: "Success", description: "User updated successfully" });
+              setEditUserDialog({ open: false, user: null });
+              loadData();
+            }}>
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
